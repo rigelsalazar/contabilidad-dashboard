@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Contabilidad — Rigel Salazar</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+/* ── VARIABLES DE TEMA ─────────────────────────────────────── */
+:root {
+  --bg:        #f5f5f7;
+  --surface:   #ffffff;
+  --surface2:  #f5f5f7;
+  --surface3:  #e8e8ed;
+  --border:    rgba(0,0,0,0.09);
+  --text:      #1d1d1f;
+  --text-2:    #6e6e73;
+  --text-3:    #aeaeb2;
+  --accent:    #007aff;
+  --green:     #34c759;
+  --red:       #ff3b30;
+  --orange:    #ff9500;
+  --shadow:    0 1px 8px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+  --grid:      rgba(0,0,0,0.055);
+  --tick:      #aeaeb2;
+}
+[data-theme="dark"] {
+  --bg:        #000000;
+  --surface:   #1c1c1e;
+  --surface2:  #2c2c2e;
+  --surface3:  #3a3a3c;
+  --border:    rgba(255,255,255,0.09);
+  --text:      #f5f5f7;
+  --text-2:    #98989d;
+  --text-3:    #636366;
+  --accent:    #0a84ff;
+  --green:     #30d158;
+  --red:       #ff453a;
+  --orange:    #ff9f0a;
+  --shadow:    0 1px 8px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+  --grid:      rgba(255,255,255,0.055);
+  --tick:      #48484a;
+}
+/* ── RESET & BASE ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  transition: background .3s, color .3s;
+}
+/* ── NAV BAR ───────────────────────────────────────────────── */
+nav {
+  position: sticky; top: 0; z-index: 200;
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px;
+  background: rgba(255,255,255,.82);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--border);
+  transition: background .3s;
+}
+[data-theme="dark"] nav { background: rgba(28,28,30,.82); }
+.nav-left { display: flex; align-items: center; gap: 10px; }
+.nav-dot  { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.nav-title { font-size: .88rem; font-weight: 600; letter-spacing: -.2px; }
+.nav-sep { color: var(--text-3); }
+.nav-sub  { font-size: .82rem; color: var(--text-2); }
+/* TOGGLE */
+.theme-toggle {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 40px;
+  cursor: pointer;
+  font-size: .78rem; font-weight: 500;
+  color: var(--text-2);
+  transition: background .2s, border-color .2s;
+  user-select: none;
+}
+.theme-toggle:hover { background: var(--surface3); }
+.toggle-icon { font-size: .95rem; }
+/* ── MAIN ──────────────────────────────────────────────────── */
+.main { max-width: 1180px; margin: 0 auto; padding: 36px 24px 72px; }
+/* ── PAGE HEADER ───────────────────────────────────────────── */
+.page-header { margin-bottom: 32px; }
+.page-header h1 {
+  font-size: 2.4rem; font-weight: 700;
+  letter-spacing: -1.8px; line-height: 1.05;
+}
+.page-header h1 em { font-style: normal; color: var(--text-2); }
+.page-header p { font-size: .84rem; color: var(--text-2); margin-top: 6px; }
+/* ── ALERT ─────────────────────────────────────────────────── */
+.alert {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface);
+  border: 1px solid rgba(255,149,0,.25);
+  border-left: 3px solid var(--orange);
+  border-radius: 10px;
+  padding: 11px 16px;
+  margin-bottom: 28px;
+  font-size: .82rem;
+  box-shadow: var(--shadow);
+}
+.alert strong { color: var(--orange); }
+/* ── FILTER BAR ────────────────────────────────────────────── */
+.filter-bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 26px;
+  display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start;
+  box-shadow: var(--shadow);
+}
+.filter-group { display: flex; flex-direction: column; gap: 8px; }
+.filter-label { font-size: .68rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .9px; }
+.pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill {
+  padding: 5px 14px;
+  border-radius: 30px;
+  font-size: .78rem; font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  background: var(--surface2);
+  transition: all .15s;
+  user-select: none;
+}
+.pill:hover { border-color: var(--accent); color: var(--accent); }
+.pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* ── KPI GRID ──────────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+  transition: background .3s;
+}
+.kpi-lbl { font-size: .7rem; color: var(--text-2); font-weight: 500; margin-bottom: 7px; }
+.kpi-val {
+  font-size: 1.8rem; font-weight: 700;
+  letter-spacing: -1.2px; line-height: 1;
+}
+.kpi-val.g { color: var(--green); }
+.kpi-val.r { color: var(--red); }
+.kpi-val.b { color: var(--accent); }
+.kpi-sub { font-size: .7rem; color: var(--text-3); margin-top: 6px; }
+/* ── CARDS / CHARTS ────────────────────────────────────────── */
+.g1   { margin-bottom: 14px; }
+.g2   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.g3-1 { display: grid; grid-template-columns: 7fr 5fr; gap: 14px; margin-bottom: 14px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow);
+  transition: background .3s;
+}
+.card-title {
+  font-size: .7rem; font-weight: 600; color: var(--text-2);
+  text-transform: uppercase; letter-spacing: .8px;
+  margin-bottom: 16px;
+}
+/* ── SUPPLIER LIST ─────────────────────────────────────────── */
+.sup-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.sup-row:last-child { border-bottom: none; }
+.sup-n { font-size: .68rem; color: var(--text-3); width: 16px; }
+.sup-name { flex: 1; font-size: .78rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sup-cat { font-size: .65rem; color: var(--text-3); }
+.sup-bar-wrap { width: 64px; height: 3px; background: var(--surface3); border-radius: 2px; flex-shrink: 0; }
+.sup-bar { height: 3px; border-radius: 2px; background: var(--accent); }
+.sup-amt { font-size: .78rem; font-weight: 600; width: 62px; text-align: right; flex-shrink: 0; }
+/* ── SECTION TITLE ─────────────────────────────────────────── */
+.sec { margin: 28px 0 14px; }
+.sec h2 { font-size: 1.15rem; font-weight: 700; letter-spacing: -.5px; }
+.sec p  { font-size: .8rem; color: var(--text-2); margin-top: 3px; }
+/* ── TAX CARDS ─────────────────────────────────────────────── */
+.tax-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.tax-inner  { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.tax-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 15px;
+  transition: background .3s;
+}
+.tax-item.warn { border-color: rgba(255,149,0,.35); }
+.tax-period { font-size: .66rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 7px; }
+.tax-amt { font-size: 1.25rem; font-weight: 700; letter-spacing: -.5px; margin-bottom: 3px; }
+.tax-amt.deb { color: var(--red); }
+.tax-amt.dev { color: var(--green); }
+.tax-note { font-size: .68rem; color: var(--text-3); margin-bottom: 2px; }
+.tax-status { font-size: .68rem; font-weight: 600; margin-top: 8px; }
+.tax-status.ok   { color: var(--green); }
+.tax-status.pend { color: var(--orange); }
+/* ── FOOTER ────────────────────────────────────────────────── */
+footer {
+  text-align: center;
+  font-size: .7rem; color: var(--text-3);
+  margin-top: 48px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+/* ── RESPONSIVE ────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .kpi-grid, .g2, .g3-1, .tax-grid-2 { grid-template-columns: 1fr; }
+  nav { padding: 0 18px; }
+  .main { padding: 24px 16px 60px; }
+  .page-header h1 { font-size: 1.8rem; }
+}
+@media (max-width: 600px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .tax-inner { grid-template-columns: 1fr; }
+  .nav-sub { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ───────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-left">
+    <div class="nav-dot"></div>
+    <span class="nav-title">Contabilidad</span>
+    <span class="nav-sep">·</span>
+    <span class="nav-sub">Rigel Al Rischa Salazar · NIF Z0316445Q</span>
+  </div>
+  <div class="theme-toggle" onclick="toggleTheme()">
+    <span class="toggle-icon" id="toggleIcon">🌙</span>
+    <span id="toggleLabel">Modo oscuro</span>
+  </div>
+</nav>
+
+<!-- ── MAIN ──────────────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <h1>Dashboard <em>financiero.</em></h1>
+    <p>Publicidad &amp; RRPP · Estimación directa simplificada · Galicia, España · Ago 2025 – Mar 2026</p>
+  </div>
+
+  <!-- ALERT -->
+  <div class="alert">
+    <span>⚠️</span>
+    <span>Próximo vencimiento — <strong>Modelo 130 IRPF T1 2026: €989,19</strong> · Presentar antes del <strong>20 de abril de 2026</strong></span>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <div class="filter-label">Año</div>
+      <div class="pills" id="yearPills">
+        <div class="pill active" data-year="todo">Todo</div>
+        <div class="pill" data-year="2025">2025</div>
+        <div class="pill" data-year="2026">2026</div>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Mes</div>
+      <div class="pills" id="monthPills"></div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-lbl">Ingresos totales</div>
+      <div class="kpi-val g" id="kIngresos">—</div>
+      <div class="kpi-sub" id="kIngSub">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Gastos deducibles</div>
+      <div class="kpi-val r" id="kGastos">—</div>
+      <div class="kpi-sub" id="kGasSub">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Beneficio neto</div>
+      <div class="kpi-val b" id="kBeneficio">—</div>
+      <div class="kpi-sub" id="kBenSub">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Margen de beneficio</div>
+      <div class="kpi-val" id="kMargen">—</div>
+      <div class="kpi-sub" id="kMarSub">—</div>
+    </div>
+  </div>
+
+  <!-- CHART: Ingresos por mes -->
+  <div class="g1">
+    <div class="card">
+      <div class="card-title">Ingresos por mes (€)</div>
+      <div style="position:relative;height:200px"><canvas id="cIngresos"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CHART: Comparativo + Categorías -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Ingresos · Gastos · Beneficio (€)</div>
+      <div style="position:relative;height:240px"><canvas id="cComparativo"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Gastos por categoría</div>
+      <div style="position:relative;height:240px"><canvas id="cDonut"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CHART: Stacked + Proveedores -->
+  <div class="g3-1">
+    <div class="card">
+      <div class="card-title">Desglose de gastos por categoría y mes (€)</div>
+      <div style="position:relative;height:260px"><canvas id="cStack"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Top proveedores</div>
+      <div id="suppList" style="margin-top:4px"></div>
+    </div>
+  </div>
+
+  <!-- CHART: Beneficio + Margen -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Evolución del beneficio neto (€)</div>
+      <div style="position:relative;height:200px"><canvas id="cBeneficio"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Margen de beneficio mensual (%)</div>
+      <div style="position:relative;height:200px"><canvas id="cMargen"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TAX SECTION -->
+  <div class="sec">
+    <h2>Impuestos trimestrales.</h2>
+    <p>Los datos fiscales muestran todos los períodos independientemente del filtro de fechas.</p>
+  </div>
+
+  <div class="tax-grid-2">
+    <!-- IRPF -->
+    <div class="card">
+      <div class="card-title">IRPF — Modelo 130 (pagos a cuenta)</div>
+      <div class="tax-inner">
+        <div class="tax-item">
+          <div class="tax-period">T3 2025 · Jul–Sep</div>
+          <div class="tax-amt deb">€659,10</div>
+          <div class="tax-note">Rend. neto: €3.295,49</div>
+          <div class="tax-note">Pagos previos: €0</div>
+          <div class="tax-status ok">✓ Presentado · 20 Oct 2025</div>
+        </div>
+        <div class="tax-item">
+          <div class="tax-period">T4 2025 · Oct–Dic</div>
+          <div class="tax-amt deb">€2.282,57</div>
+          <div class="tax-note">Rend. neto acum.: €14.848,49</div>
+          <div class="tax-note">Pagos previos: €687,13</div>
+          <div class="tax-status ok">✓ Presentado · 30 Ene 2026</div>
+        </div>
+        <div class="tax-item warn">
+          <div class="tax-period">T1 2026 · Ene–Mar</div>
+          <div class="tax-amt deb">€989,19</div>
+          <div class="tax-note">Rend. neto: €4.945,94</div>
+          <div class="tax-note">Pagos previos: €0 (año nuevo)</div>
+          <div class="tax-status pend">⏰ Vence 20 Abr 2026</div>
+        </div>
+      </div>
+    </div>
+    <!-- IVA -->
+    <div class="card">
+      <div class="card-title">IVA — Modelo 303 (saldo liquidación)</div>
+      <div class="tax-inner">
+        <div class="tax-item">
+          <div class="tax-period">T3 2025 · Jul–Sep</div>
+          <div class="tax-amt dev">−€19,71</div>
+          <div class="tax-note">Repercutido: €0 (export.)</div>
+          <div class="tax-note">Soportado: €19,71</div>
+          <div class="tax-status ok">✓ Devolución solicitada</div>
+        </div>
+        <div class="tax-item">
+          <div class="tax-period">T4 2025 · Oct–Dic</div>
+          <div class="tax-amt dev">−€104,64</div>
+          <div class="tax-note">Repercutido: €0 (export.)</div>
+          <div class="tax-note">Soportado: €104,64</div>
+          <div class="tax-status ok">✓ Devolución solicitada</div>
+        </div>
+        <div class="tax-item warn">
+          <div class="tax-period">T1 2026 · Ene–Mar</div>
+          <div class="tax-amt dev">−€69,64</div>
+          <div class="tax-note">Repercutido: €0 (export.)</div>
+          <div class="tax-note">Soportado: €69,64</div>
+          <div class="tax-status pend">⏰ Vence 20 Abr 2026</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<footer>
+  Datos fuente: contabilidad_autonomo.xlsx · Régimen Estimación Directa Simplificada · IVA 0% exportación extra-UE · Generado con Claude
+</footer>
+
+<!-- ── JS ─────────────────────────────────────────────────────── -->
+<script>
+/* ────────────────────────────────────── DATA ── */
+const ALL_MONTHS = ['2025-08','2025-09','2025-10','2025-11','2025-12','2026-01','2026-02','2026-03'];
+const LABELS = {
+  '2025-08':'Ago 25','2025-09':'Sep 25','2025-10':'Oct 25','2025-11':'Nov 25','2025-12':'Dic 25',
+  '2026-01':'Ene 26','2026-02':'Feb 26','2026-03':'Mar 26'
+};
+const YEAR_MONTHS = {
+  todo: ALL_MONTHS,
+  '2025': ALL_MONTHS.filter(m=>m.startsWith('2025')),
+  '2026': ALL_MONTHS.filter(m=>m.startsWith('2026')),
+};
+
+// Datos mensuales (de Balance_PyG + Facturas)
+const MD = {
+  '2025-08': { ing:0,       prov:0,    sw:0,      tel:0,     cuota:52.56,  otros:0 },
+  '2025-09': { ing:8345,    prov:4770, sw:76.53,  tel:62.81, cuota:87.61,  otros:0 },
+  '2025-10': { ing:8805,    prov:0,    sw:58.85,  tel:62.81, cuota:87.61,  otros:78.76 },
+  '2025-11': { ing:2191.49, prov:0,    sw:47.48,  tel:62.81, cuota:87.61,  otros:218.28 },
+  '2025-12': { ing:1745,    prov:0,    sw:217.65, tel:64.29, cuota:87.61,  otros:114.73 },
+  '2026-01': { ing:3750,    prov:0,    sw:217.70, tel:75.89, cuota:88.56,  otros:8.73 },
+  '2026-02': { ing:2000,    prov:0,    sw:182.12, tel:65.05, cuota:88.56,  otros:8.64 },
+  '2026-03': { ing:0,       prov:0,    sw:68.81,  tel:0,     cuota:0,      otros:0 },
+};
+
+// Facturas de gasto individuales
+const FACTURAS = [
+  {m:'2025-08', prov:'TGSS', base:52.56, cat:'Cuota autónomos'},
+  {m:'2025-09', prov:'Allmultiverse LLC', base:925, cat:'Proveedores/Servicios'},
+  {m:'2025-09', prov:'Allmultiverse LLC', base:1245, cat:'Proveedores/Servicios'},
+  {m:'2025-09', prov:'Allmultiverse LLC', base:1480, cat:'Proveedores/Servicios'},
+  {m:'2025-09', prov:'Adler Group VIP LLC', base:1120, cat:'Proveedores/Servicios'},
+  {m:'2025-09', prov:'Hostinger', base:17.27, cat:'Software & Tools'},
+  {m:'2025-09', prov:'Telefónica', base:62.81, cat:'Teléfono e internet'},
+  {m:'2025-09', prov:'Retyp (OptinMonster)', base:13.76, cat:'Software & Tools'},
+  {m:'2025-09', prov:'Zoom', base:45.5, cat:'Software & Tools'},
+  {m:'2025-09', prov:'TGSS', base:87.61, cat:'Cuota autónomos'},
+  {m:'2025-10', prov:'Famewall (Astramind)', base:11.03, cat:'Software & Tools'},
+  {m:'2025-10', prov:'Hostinger', base:12.87, cat:'Software & Tools'},
+  {m:'2025-10', prov:'Telefónica', base:62.81, cat:'Teléfono e internet'},
+  {m:'2025-10', prov:'Repsol', base:78.76, cat:'Otros deducibles'},
+  {m:'2025-10', prov:'Retyp (OptinMonster)', base:19.32, cat:'Software & Tools'},
+  {m:'2025-10', prov:'Zoom', base:15.63, cat:'Software & Tools'},
+  {m:'2025-10', prov:'TGSS', base:87.61, cat:'Cuota autónomos'},
+  {m:'2025-11', prov:'Famewall (Astramind)', base:11.39, cat:'Software & Tools'},
+  {m:'2025-11', prov:'eDreams', base:79.28, cat:'Otros deducibles'},
+  {m:'2025-11', prov:'Engrande SL (Hotel)', base:139, cat:'Otros deducibles'},
+  {m:'2025-11', prov:'Telefónica', base:62.81, cat:'Teléfono e internet'},
+  {m:'2025-11', prov:'Retyp (OptinMonster)', base:19.95, cat:'Software & Tools'},
+  {m:'2025-11', prov:'Zoom', base:16.14, cat:'Software & Tools'},
+  {m:'2025-11', prov:'TGSS', base:87.61, cat:'Cuota autónomos'},
+  {m:'2025-12', prov:'Famewall (Astramind)', base:11.51, cat:'Software & Tools'},
+  {m:'2025-12', prov:'Ecamm Network', base:38.39, cat:'Software & Tools'},
+  {m:'2025-12', prov:'eDreams', base:20.87, cat:'Otros deducibles'},
+  {m:'2025-12', prov:'ElevenLabs', base:4.8, cat:'Software & Tools'},
+  {m:'2025-12', prov:'Manychat', base:14.4, cat:'Software & Tools'},
+  {m:'2025-12', prov:'Manychat', base:32.35, cat:'Software & Tools'},
+  {m:'2025-12', prov:'Telefónica', base:64.29, cat:'Teléfono e internet'},
+  {m:'2025-12', prov:'Notion', base:23.04, cat:'Software & Tools'},
+  {m:'2025-12', prov:'OpenAI', base:19.2, cat:'Software & Tools'},
+  {m:'2025-12', prov:'Readwise', base:12.47, cat:'Software & Tools'},
+  {m:'2025-12', prov:'Miro', base:25.02, cat:'Software & Tools'},
+  {m:'2025-12', prov:'Repsol', base:85.22, cat:'Otros deducibles'},
+  {m:'2025-12', prov:'Retyp (OptinMonster)', base:20.16, cat:'Software & Tools'},
+  {m:'2025-12', prov:'Skool', base:8.64, cat:'Otros deducibles'},
+  {m:'2025-12', prov:'Zoom', base:16.31, cat:'Software & Tools'},
+  {m:'2025-12', prov:'TGSS', base:87.61, cat:'Cuota autónomos'},
+  {m:'2026-01', prov:'Anthropic (Claude)', base:18, cat:'Software & Tools'},
+  {m:'2026-01', prov:'Ecamm Network', base:38.79, cat:'Software & Tools'},
+  {m:'2026-01', prov:'Famewall (Astramind)', base:11.63, cat:'Software & Tools'},
+  {m:'2026-01', prov:'Loom', base:9.7, cat:'Software & Tools'},
+  {m:'2026-01', prov:'Manychat', base:33.87, cat:'Software & Tools'},
+  {m:'2026-01', prov:'Manychat', base:14.55, cat:'Software & Tools'},
+  {m:'2026-01', prov:'Telefónica', base:75.89, cat:'Teléfono e internet'},
+  {m:'2026-01', prov:'Notion', base:23.28, cat:'Software & Tools'},
+  {m:'2026-01', prov:'OpenAI', base:19.4, cat:'Software & Tools'},
+  {m:'2026-01', prov:'Readwise', base:12.6, cat:'Software & Tools'},
+  {m:'2026-01', prov:'Miro', base:19.4, cat:'Software & Tools'},
+  {m:'2026-01', prov:'Skool', base:8.73, cat:'Otros deducibles'},
+  {m:'2026-01', prov:'Zoom', base:16.48, cat:'Software & Tools'},
+  {m:'2026-01', prov:'TGSS', base:88.56, cat:'Cuota autónomos'},
+  {m:'2026-02', prov:'Anthropic (Claude)', base:18, cat:'Software & Tools'},
+  {m:'2026-02', prov:'Ecamm Network', base:38.39, cat:'Software & Tools'},
+  {m:'2026-02', prov:'Famewall (Astramind)', base:11.51, cat:'Software & Tools'},
+  {m:'2026-02', prov:'Loom', base:9.6, cat:'Software & Tools'},
+  {m:'2026-02', prov:'Manychat', base:14.4, cat:'Software & Tools'},
+  {m:'2026-02', prov:'Telefónica', base:65.05, cat:'Teléfono e internet'},
+  {m:'2026-02', prov:'Notion', base:23.04, cat:'Software & Tools'},
+  {m:'2026-02', prov:'OpenAI', base:19.2, cat:'Software & Tools'},
+  {m:'2026-02', prov:'Readwise', base:12.47, cat:'Software & Tools'},
+  {m:'2026-02', prov:'Miro', base:19.2, cat:'Software & Tools'},
+  {m:'2026-02', prov:'Skool', base:8.64, cat:'Otros deducibles'},
+  {m:'2026-02', prov:'Zoom', base:16.31, cat:'Software & Tools'},
+  {m:'2026-02', prov:'TGSS', base:88.56, cat:'Cuota autónomos'},
+  {m:'2026-03', prov:'OpenAI', base:17.38, cat:'Software & Tools'},
+  {m:'2026-03', prov:'Zoom', base:16.99, cat:'Software & Tools'},
+  {m:'2026-03', prov:'Manychat', base:34.44, cat:'Software & Tools'},
+];
+
+/* ────────────────────────────────────── STATE ── */
+let selYear = 'todo';
+let selMonths = new Set(ALL_MONTHS);
+
+/* ────────────────────────────────────── UTILS ── */
+const fmt = n => '€' + n.toLocaleString('es-ES', {minimumFractionDigits:0, maximumFractionDigits:0});
+const fmt2 = n => '€' + Math.abs(n).toLocaleString('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+function getCSSVar(v) {
+  return getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+}
+
+function filtered() {
+  return ALL_MONTHS.filter(m => selMonths.has(m)).map(m => {
+    const d = MD[m];
+    const g = d.prov + d.sw + d.tel + d.cuota + d.otros;
+    return { key:m, lbl:LABELS[m], ing:d.ing, prov:d.prov, sw:d.sw, tel:d.tel, cuota:d.cuota, otros:d.otros, g, ben:d.ing-g };
+  });
+}
+
+/* ────────────────────────────────────── CHART DEFAULTS ── */
+function scaleDef() {
+  return {
+    x: { grid:{color:getCSSVar('--grid')}, ticks:{color:getCSSVar('--tick'), font:{family:'-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif', size:11}} },
+    y: { grid:{color:getCSSVar('--grid')}, ticks:{color:getCSSVar('--tick'), font:{family:'-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif', size:11}, callback:v=>'€'+v.toLocaleString('es-ES')} }
+  };
+}
+function legDef() {
+  return { labels:{color:getCSSVar('--text-2'), font:{family:'-apple-system', size:11}, padding:16, boxWidth:10, boxHeight:10, usePointStyle:true, pointStyle:'circle'} };
+}
+function tooltipDef() {
+  return {
+    backgroundColor: getCSSVar('--surface'),
+    titleColor: getCSSVar('--text'),
+    bodyColor: getCSSVar('--text-2'),
+    borderColor: getCSSVar('--border'),
+    borderWidth: 1,
+    padding: 10,
+    callbacks: { label: ctx => ' ' + fmt2(ctx.raw) }
+  };
+}
+
+const CATS = ['prov','sw','tel','cuota','otros'];
+const CAT_LABELS = ['Proveedores','Software','Teléfono','Cuota autónomos','Otros'];
+const CAT_COLORS = ['#ff3b30','#007aff','#5ac8fa','#ff9500','#34c759'];
+
+/* ────────────────────────────────────── INIT CHARTS ── */
+let charts = {};
+
+function initCharts() {
+  const f = filtered();
+  const labels = f.map(d=>d.lbl);
+
+  // 1. Ingresos bar
+  charts.ing = new Chart(document.getElementById('cIngresos'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Ingresos',
+        data: f.map(d=>d.ing),
+        backgroundColor: f.map(d=>d.ing>0?'rgba(52,199,89,0.75)':'rgba(52,199,89,0.18)'),
+        borderRadius: 5, borderSkipped: false, borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{display:false}, tooltip: tooltipDef() },
+      scales: scaleDef(),
+    }
+  });
+
+  // 2. Comparativo
+  const scaleComp = scaleDef();
+  charts.comp = new Chart(document.getElementById('cComparativo'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Ingresos', data:f.map(d=>d.ing), backgroundColor:'rgba(52,199,89,0.65)', borderRadius:4, borderWidth:0 },
+        { label:'Gastos',   data:f.map(d=>d.g),   backgroundColor:'rgba(255,59,48,0.65)', borderRadius:4, borderWidth:0 },
+        { label:'Beneficio', data:f.map(d=>d.ben), type:'line',
+          borderColor:'#007aff', backgroundColor:'rgba(0,122,255,0.08)',
+          fill:true, tension:.4, pointRadius:4, pointBackgroundColor:'#007aff',
+          pointBorderColor:'var(--surface)', pointBorderWidth:2, borderWidth:2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: legDef(), tooltip: tooltipDef() },
+      scales: scaleComp,
+    }
+  });
+
+  // 3. Donut
+  const catTotals = CATS.map(cat => f.reduce((s,d)=>s+d[cat],0));
+  charts.donut = new Chart(document.getElementById('cDonut'), {
+    type: 'doughnut',
+    data: {
+      labels: CAT_LABELS,
+      datasets: [{ data: catTotals, backgroundColor: CAT_COLORS, borderColor: getCSSVar('--surface'), borderWidth: 3, hoverOffset: 8 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: {
+        legend: { position:'right', labels:{color:getCSSVar('--text-2'), font:{family:'-apple-system',size:11}, padding:12, boxWidth:9, usePointStyle:true, pointStyle:'circle'} },
+        tooltip: { ...tooltipDef(), callbacks:{label:ctx=>' '+fmt2(ctx.raw)+' ('+((ctx.raw/catTotals.reduce((a,b)=>a+b,0))*100).toFixed(1)+'%)'} }
+      }
+    }
+  });
+
+  // 4. Stack gastos
+  const scaleStack = {
+    x: { stacked:true, ...scaleDef().x },
+    y: { stacked:true, ...scaleDef().y }
+  };
+  charts.stack = new Chart(document.getElementById('cStack'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: CATS.map((cat,i)=>({
+        label: CAT_LABELS[i], data: f.map(d=>d[cat]),
+        backgroundColor: CAT_COLORS[i], borderWidth: 0,
+        borderRadius: i===CATS.length-1 ? {topLeft:4,topRight:4} : 0,
+        borderSkipped: false,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: legDef(), tooltip: tooltipDef() },
+      scales: scaleStack,
+    }
+  });
+
+  // 5. Beneficio línea
+  charts.ben = new Chart(document.getElementById('cBeneficio'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Beneficio',
+        data: f.map(d=>d.ben),
+        borderColor: '#007aff', backgroundColor: 'rgba(0,122,255,0.07)',
+        fill: true, tension: .4, borderWidth: 2,
+        pointRadius: 5, pointBackgroundColor: f.map(d=>d.ben>=0?'#007aff':'#ff3b30'),
+        pointBorderColor: getCSSVar('--surface'), pointBorderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{display:false}, tooltip: tooltipDef() },
+      scales: scaleDef(),
+    }
+  });
+
+  // 6. Margen %
+  const scaleM = {
+    x: { grid:{color:getCSSVar('--grid')}, ticks:{color:getCSSVar('--tick'),font:{family:'-apple-system',size:11}} },
+    y: { min:0, max:100, grid:{color:getCSSVar('--grid')}, ticks:{color:getCSSVar('--tick'),font:{family:'-apple-system',size:11}, callback:v=>v+'%'} }
+  };
+  charts.mar = new Chart(document.getElementById('cMargen'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Margen %',
+        data: f.map(d=>d.ing>0?(d.ben/d.ing*100):null),
+        backgroundColor: f.map(d=>d.ing>0?(d.ben/d.ing>=.6?'rgba(52,199,89,0.75)':d.ben/d.ing>=.3?'rgba(255,149,0,0.75)':'rgba(255,59,48,0.75)'):'rgba(150,150,150,0.2)'),
+        borderRadius: 5, borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{display:false}, tooltip:{...tooltipDef(), callbacks:{label:ctx=>ctx.raw!==null?' '+ctx.raw.toFixed(1)+'%':' Sin datos'}} },
+      scales: scaleM,
+    }
+  });
+}
+
+/* ────────────────────────────────────── UPDATE CHARTS ── */
+function updateCharts() {
+  const f = filtered();
+  const labels = f.map(d=>d.lbl);
+  const catTotals = CATS.map(cat => f.reduce((s,d)=>s+d[cat],0));
+
+  // KPIs
+  const totIng = f.reduce((s,d)=>s+d.ing,0);
+  const totG   = f.reduce((s,d)=>s+d.g,0);
+  const totBen = totIng - totG;
+  const margen = totIng>0?(totBen/totIng*100):0;
+  const meses  = f.length;
+
+  document.getElementById('kIngresos').textContent = fmt(totIng);
+  document.getElementById('kIngSub').textContent   = meses + ' mes' + (meses!==1?'es':'') + ' · ' + f.filter(d=>d.ing>0).length + ' con ingresos';
+  document.getElementById('kGastos').textContent   = fmt(totG);
+  document.getElementById('kGasSub').textContent   = 'Promedio mensual: ' + fmt(Math.round(totG/Math.max(meses,1)));
+  document.getElementById('kBeneficio').textContent = fmt(totBen);
+  document.getElementById('kBenSub').textContent    = 'Acumulado período seleccionado';
+  const mk = document.getElementById('kMargen');
+  mk.textContent = margen.toFixed(1) + '%';
+  mk.className = 'kpi-val ' + (margen>=70?'g':margen>=40?'b':'r');
+  document.getElementById('kMarSub').textContent = margen>=70?'Excelente':'Revisar estructura de costos';
+
+  // chart: ing
+  charts.ing.data.labels = labels;
+  charts.ing.data.datasets[0].data = f.map(d=>d.ing);
+  charts.ing.data.datasets[0].backgroundColor = f.map(d=>d.ing>0?'rgba(52,199,89,0.75)':'rgba(52,199,89,0.18)');
+  charts.ing.update('active');
+
+  // chart: comp
+  charts.comp.data.labels = labels;
+  charts.comp.data.datasets[0].data = f.map(d=>d.ing);
+  charts.comp.data.datasets[1].data = f.map(d=>d.g);
+  charts.comp.data.datasets[2].data = f.map(d=>d.ben);
+  charts.comp.update('active');
+
+  // chart: donut
+  charts.donut.data.datasets[0].data = catTotals;
+  charts.donut.update('active');
+
+  // chart: stack
+  charts.stack.data.labels = labels;
+  CATS.forEach((cat,i) => { charts.stack.data.datasets[i].data = f.map(d=>d[cat]); });
+  charts.stack.update('active');
+
+  // chart: ben
+  charts.ben.data.labels = labels;
+  charts.ben.data.datasets[0].data = f.map(d=>d.ben);
+  charts.ben.data.datasets[0].pointBackgroundColor = f.map(d=>d.ben>=0?'#007aff':'#ff3b30');
+  charts.ben.update('active');
+
+  // chart: margen
+  charts.mar.data.labels = labels;
+  charts.mar.data.datasets[0].data = f.map(d=>d.ing>0?(d.ben/d.ing*100):null);
+  charts.mar.data.datasets[0].backgroundColor = f.map(d=>d.ing>0?(d.ben/d.ing>=.6?'rgba(52,199,89,0.75)':d.ben/d.ing>=.3?'rgba(255,149,0,0.75)':'rgba(255,59,48,0.75)'):'rgba(150,150,150,0.2)');
+  charts.mar.update('active');
+
+  // top suppliers
+  const suppMap = {};
+  FACTURAS.filter(f=>selMonths.has(f.m)).forEach(f=>{
+    suppMap[f.prov] = (suppMap[f.prov]||0) + f.base;
+  });
+  const suppSorted = Object.entries(suppMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const maxS = suppSorted[0]?.[1] || 1;
+  const el = document.getElementById('suppList');
+  el.innerHTML = suppSorted.map(([name,amt],i)=>`
+    <div class="sup-row">
+      <span class="sup-n">${i+1}</span>
+      <span class="sup-name">${name}</span>
+      <div class="sup-bar-wrap"><div class="sup-bar" style="width:${(amt/maxS*100).toFixed(0)}%"></div></div>
+      <span class="sup-amt">${fmt2(amt)}</span>
+    </div>`).join('');
+}
+
+/* ────────────────────────────────────── FILTERS ── */
+function renderMonthPills() {
+  const yearMonths = YEAR_MONTHS[selYear];
+  const container = document.getElementById('monthPills');
+  container.innerHTML = yearMonths.map(m=>`
+    <div class="pill ${selMonths.has(m)?'active':''}" data-month="${m}">${LABELS[m]}</div>
+  `).join('');
+  container.querySelectorAll('.pill').forEach(p=>{
+    p.addEventListener('click', ()=>{
+      const m = p.dataset.month;
+      if (selMonths.has(m)) { if(selMonths.size>1) selMonths.delete(m); }
+      else selMonths.add(m);
+      renderMonthPills();
+      updateCharts();
+    });
+  });
+}
+
+document.getElementById('yearPills').querySelectorAll('.pill').forEach(p=>{
+  p.addEventListener('click', ()=>{
+    selYear = p.dataset.year;
+    selMonths = new Set(YEAR_MONTHS[selYear]);
+    document.querySelectorAll('#yearPills .pill').forEach(x=>x.classList.remove('active'));
+    p.classList.add('active');
+    renderMonthPills();
+    updateCharts();
+  });
+});
+
+/* ────────────────────────────────────── THEME ── */
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('toggleIcon').textContent  = isDark ? '🌙' : '☀️';
+  document.getElementById('toggleLabel').textContent = isDark ? 'Modo oscuro' : 'Modo claro';
+  // update chart colors
+  setTimeout(()=>{
+    Object.values(charts).forEach(c=>{
+      if (!c.options?.scales) return;
+      Object.values(c.options.scales).forEach(s=>{
+        if (s.grid) s.grid.color = getCSSVar('--grid');
+        if (s.ticks) s.ticks.color = getCSSVar('--tick');
+      });
+      if (c.options.plugins?.legend?.labels) c.options.plugins.legend.labels.color = getCSSVar('--text-2');
+      if (c.options.plugins?.tooltip) {
+        c.options.plugins.tooltip.backgroundColor = getCSSVar('--surface');
+        c.options.plugins.tooltip.titleColor = getCSSVar('--text');
+        c.options.plugins.tooltip.bodyColor  = getCSSVar('--text-2');
+        c.options.plugins.tooltip.borderColor= getCSSVar('--border');
+      }
+      c.update();
+    });
+    // donut border color
+    if (charts.donut?.data?.datasets?.[0]) {
+      charts.donut.data.datasets[0].borderColor = getCSSVar('--surface');
+      charts.donut.update();
+    }
+  }, 50);
+}
+
+/* ────────────────────────────────────── BOOT ── */
+renderMonthPills();
+initCharts();
+updateCharts();
+</script>
+</body>
+</html>
